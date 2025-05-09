@@ -10,7 +10,7 @@ enum Command {
 struct Options {
     command: Option<Command>,
     module: Option<String>,
-    binary_directory: Option<String>,
+    binary_path: Option<String>,
     install_directory: Option<String>,
     compile: Option<bool>,
 }
@@ -20,16 +20,24 @@ impl Default for Options {
         Options {
             command: Some(Command::HELP),
             module: Some(String::from("rust")),
-            binary_directory: None,
-            install_directory: Some(String::from("/usr/bin")),
+            binary_path: None,
+            install_directory: Some(String::from("/usr/local/bin")),
             compile: Some(true),
         }
     }
 }
 
 fn main() {
-    // Check that install directory exists
-    match fs::exists("/usr/local/bin") {
+    let parsed_args = parse_args();
+    let options = generate_options(parsed_args);
+
+    match fs::exists(
+        options
+            .install_directory
+            .clone()
+            .unwrap_or_default()
+            .as_str(),
+    ) {
         Ok(true) => {
             println!("Install directory OK")
         }
@@ -43,13 +51,11 @@ fn main() {
         }
     }
 
-    let parsed_args = parse_args();
-    let options = generate_options(parsed_args);
-
     match crate::rust::run(options) {
         Ok(_) => println!("Successfuly installed!"),
         Err(e) => {
-            eprintln!("Error installing: {}", e)
+            eprintln!("Error installing: {}", e);
+            process::exit(1)
         }
     }
 }
@@ -91,7 +97,7 @@ fn generate_options(parsed_args: Vec<(String, Option<String>)>) -> Options {
         match arg.0.as_str() {
             "-h" | "--help" => options.command = Some(Command::HELP),
             "-m" | "--module" => options.module = arg.1.clone(),
-            "-d" | "--binary-directory" => options.binary_directory = arg.1.clone(),
+            "-b" | "--binary-path" => options.binary_path = arg.1.clone(),
             "-i" | "--install-dir" => options.install_directory = arg.1.clone(),
             "-n" | "--no-compile" => options.compile = Some(false),
             _ => {}
