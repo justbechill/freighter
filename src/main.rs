@@ -52,6 +52,7 @@ fn main() -> Result<()> {
         }
     }
 
+    // Send help message
     match opts.command {
         Some(Command::HELP) => {
             println!("THIS WILL BE THE HELP MESSAGE");
@@ -60,7 +61,15 @@ fn main() -> Result<()> {
         _ => {}
     }
 
-    crate::rust::run(opts)?;
+    match opts.module.clone().unwrap_or_default().as_str() {
+        "rust" => {
+            println!("Running Rust module");
+            crate::rust::run(opts)?;
+        }
+        _ => {
+            println!("{}", "Module does not exist.".red())
+        }
+    }
 
     Ok(())
 }
